@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Bank APK Detector</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+                /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: #4CAF50;
+        }
+
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 300;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #4CAF50;
+            background: #f0fff4;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon i {
+            font-size: 4rem;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .upload-area h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .upload-area p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+
+        .browse-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .browse-btn i {
+            margin-right: 8px;
+        }
+
+        /* File Info Styles */
+        .file-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 10px;
+            border: 1px solid #4CAF50;
+        }
+
+        .file-details {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-details i {
+            font-size: 1.5rem;
+            color: #4CAF50;
+        }
+
+        .file-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .remove-file {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .remove-file:hover {
+            background: #c0392b;
+        }
+
+        /* Analyze Button */
+        .analyze-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .analyze-btn:enabled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .analyze-btn i {
+            margin-right: 10px;
+        }
+
+        /* Loading Section */
+        .loading-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-animation h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .loading-animation p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressAnimation 3s ease-in-out infinite;
+        }
+
+        @keyframes progressAnimation {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        /* Features Section */
+        .features-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .features-section h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: #fff;
+            padding: 30px 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .feature-icon i {
+            font-size: 1.8rem;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Security Notice */
+        .security-notice {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .notice-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .notice-content i {
+            font-size: 1.5rem;
+            margin-top: 5px;
+        }
+
+        .notice-content h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .notice-content p {
+            opacity: 0.95;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 25px 20px;
+            }
+            
+            .logo {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .logo h1 {
+                font-size: 2rem;
+            }
+            
+            .upload-section,
+            .loading-section,
+            .features-section {
+                padding: 30px 25px;
+            }
+            
+            .upload-area {
+                padding: 40px 20px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .notice-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tagline {
+                font-size: 1rem;
+            }
+            
+            .upload-area {
+                padding: 30px 15px;
+            }
+            
+            .upload-icon i {
+                font-size: 3rem;
+            }
+            
+            .upload-area h2 {
+                font-size: 1.3rem;
+            }
+            
+            .features-section h2 {
+                font-size: 1.7rem;
+            }
+            
+            .feature-card {
+                padding: 25px 20px;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .visible {
+            display: block !important;
+        }
+
+        /* Focus Styles for Accessibility */
+        .browse-btn:focus,
+        .analyze-btn:focus,
+        .remove-file:focus {
+            outline: 3px solid rgba(52, 152, 219, 0.5);
+            outline-offset: 2px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>BankAPK Defender</h1>
+            </div>
+            <p class="tagline">Protect yourself from malicious banking applications</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h2>Upload APK File for Analysis</h2>
+                    <p>Drag and drop your APK file here or click to browse</p>
+                    <input type="file" id="fileInput" accept=".apk" style="display: none;">
+                    <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
+                </div>
+                
+                <!-- File Info Display -->
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-details">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="file-text">
+                            <span class="file-name" id="fileName"></span>
+                            <span class="file-size" id="fileSize"></span>
+                        </div>
+                        <button class="remove-file" id="removeFile">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analysis Button -->
+                <button class="analyze-btn" id="analyzeBtn" disabled>
+                    <i class="fas fa-search"></i> Analyze APK
+                </button>
+            </section>
+
+            <!-- Loading Section -->
+            <section class="loading-section" id="loadingSection" style="display: none;">
+                <div class="loading-animation">
+                    <div class="spinner"></div>
+                    <h3>Analyzing APK...</h3>
+                    <p>This may take a few moments</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="features-section">
+                <h2>How It Works</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <h3>Deep Analysis</h3>
+                        <p>Advanced machine learning algorithms analyze APK structure, permissions, and code patterns</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <h3>Signature Verification</h3>
+                        <p>Checks digital signatures and certificates to identify legitimate banking apps</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3>Threat Database</h3>
+                        <p>Compares against known malicious APK patterns and threat intelligence</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Real-time Results</h3>
+                        <p>Get instant feedback on whether your banking app is legitimate or potentially harmful</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Notice -->
+            <section class="security-notice">
+                <div class="notice-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <h3>Security Notice</h3>
+                        <p>Your uploaded files are analyzed locally and are not stored on our servers. We prioritize your privacy and security.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 BankAPK Defender. Protecting users from fraudulent banking applications.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts
+    <script src="script.js"></script> -->
+    <script>
+                    // APK Detector Frontend JavaScript
+            document.addEventListener('DOMContentLoaded', function() {
+                // Get DOM elements
+                const fileInput = document.getElementById('fileInput');
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInfo = document.getElementById('fileInfo');
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                const loadingSection = document.getElementById('loadingSection');
+                const removeFileBtn = document.getElementById('removeFile');
+                const fileName = document.getElementById('fileName');
+                const fileSize = document.getElementById('fileSize');
+                const progressFill = document.getElementById('progressFill');
+
+                let selectedFile = null;
+
+                // File input change handler
+                fileInput.addEventListener('change', handleFileSelect);
+                
+                // Drag and drop handlers
+                uploadArea.addEventListener('dragover', handleDragOver);
+                uploadArea.addEventListener('dragleave', handleDragLeave);
+                uploadArea.addEventListener('drop', handleFileDrop);
+                uploadArea.addEventListener('click', () => fileInput.click());
+                
+                // Remove file handler
+                removeFileBtn.addEventListener('click', clearFile);
+                
+                // Analyze button handler
+                analyzeBtn.addEventListener('click', analyzeFile);
+
+                function handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        processFile(file);
+                    }
+                }
+
+                function handleDragOver(event) {
+                    event.preventDefault();
+                    uploadArea.classList.add('drag-over');
+                }
+
+                function handleDragLeave(event) {
+                    event.preventDefault();
+                    uploadArea.classList.remove('drag-over');
+                }
+
+                function handleFileDrop(event) {
+                    event.preventDefault();
+                    uploadArea.classList.remove('drag-over');
+                    
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        fileInput.files = files; // Update file input
+                        processFile(file);
+                    }
+                }
+
+                function processFile(file) {
+                    // Validate file type
+                    if (!file.name.toLowerCase().endsWith('.apk')) {
+                        alert('Please select an APK file (.apk extension required)');
+                        return;
+                    }
+
+                    // Validate file size (100MB max)
+                    if (file.size > 100 * 1024 * 1024) {
+                        alert('File too large. Maximum size is 100MB');
+                        return;
+                    }
+
+                    selectedFile = file;
+                    
+                    // Display file info
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatFileSize(file.size);
+                    fileInfo.style.display = 'block';
+                    analyzeBtn.disabled = false;
+                    
+                    // Add animation
+                    fileInfo.classList.add('fade-in');
+                }
+
+                function clearFile() {
+                    selectedFile = null;
+                    fileInput.value = '';
+                    fileInfo.style.display = 'none';
+                    analyzeBtn.disabled = true;
+                    uploadArea.classList.remove('drag-over');
+                }
+
+                function formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                }
+
+                function showLoading() {
+                    loadingSection.style.display = 'block';
+                    loadingSection.classList.add('fade-in');
+                    
+                    // Animate progress bar
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.random() * 15;
+                        if (progress > 90) progress = 90;
+                        progressFill.style.width = progress + '%';
+                    }, 300);
+                    
+                    return interval;
+                }
+
+                function hideLoading() {
+                    loadingSection.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }
+
+                function analyzeFile() {
+                    if (!selectedFile) {
+                        alert('Please select a file first');
+                        return;
+                    }
+
+                    // Show loading
+                    const progressInterval = showLoading();
+                    analyzeBtn.disabled = true;
+
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+
+                    // Send to Flask backend
+                    fetch('/analyze', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        clearInterval(progressInterval);
+                        progressFill.style.width = '100%';
+                        
+                        setTimeout(() => {
+                            hideLoading();
+                            displayResults(data);
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        clearInterval(progressInterval);
+                        hideLoading();
+                        console.error('Error:', error);
+                        alert('Analysis failed. Please try again.');
+                        analyzeBtn.disabled = false;
+                    });
+                }
+
+                function displayResults(data) {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        analyzeBtn.disabled = false;
+                        return;
+                    }
+
+                    // Create results display
+                    const result = data.result;
+                    const resultsHtml = `
+                        <div class="results-section fade-in">
+                            <div class="result-card ${result.is_safe ? 'safe' : 'dangerous'}">
+                                <div class="result-header">
+                                    <i class="fas ${result.is_safe ? 'fa-shield-alt' : 'fa-exclamation-triangle'}"></i>
+                                    <h2>${result.is_safe ? 'APK is Safe' : 'APK is Suspicious'}</h2>
+                                </div>
+                                <div class="result-details">
+                                    <div class="detail-item">
+                                        <span class="label">File:</span>
+                                        <span class="value">${data.filename}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="label">Risk Level:</span>
+                                        <span class="value risk-${result.risk_level.toLowerCase()}">${result.risk_level}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="label">Confidence:</span>
+                                        <span class="value">${result.confidence}%</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="label">Analysis Time:</span>
+                                        <span class="value">${data.analysis_time}</span>
+                                    </div>
+                                </div>
+                                <div class="recommendation">
+                                    <p>${result.recommendation}</p>
+                                    ${result.mock_result ? '<small style="opacity: 0.7;">* Demo mode - using simulated analysis</small>' : ''}
+                                </div>
+                                <button class="new-analysis-btn" onclick="location.reload()">
+                                    <i class="fas fa-redo"></i> Analyze Another APK
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Insert results into page
+                    const mainContent = document.querySelector('.main-content');
+                    const uploadSection = document.querySelector('.upload-section');
+                    uploadSection.insertAdjacentHTML('afterend', resultsHtml);
+                    
+                    // Scroll to results
+                    document.querySelector('.results-section').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                    
+                    analyzeBtn.disabled = false;
+                }
+
+                // Add dynamic styles for results
+                const style = document.createElement('style');
+                style.textContent = `
+                    .results-section {
+                        margin-top: 30px;
+                    }
+                    
+                    .result-card {
+                        background: white;
+                        padding: 30px;
+                        border-radius: 15px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                        border-left: 5px solid;
+                    }
+                    
+                    .result-card.safe {
+                        border-left-color: #4CAF50;
+                    }
+                    
+                    .result-card.dangerous {
+                        border-left-color: #e74c3c;
+                    }
+                    
+                    .result-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    
+                    .result-header i {
+                        font-size: 2rem;
+                    }
+                    
+                    .safe .result-header i {
+                        color: #4CAF50;
+                    }
+                    
+                    .dangerous .result-header i {
+                        color: #e74c3c;
+                    }
+                    
+                    .result-header h2 {
+                        margin: 0;
+                        color: #2c3e50;
+                    }
+                    
+                    .result-details {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    
+                    .detail-item {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #eee;
+                    }
+                    
+                    .label {
+                        font-weight: 600;
+                        color: #666;
+                    }
+                    
+                    .value {
+                        font-weight: 500;
+                        color: #2c3e50;
+                    }
+                    
+                    .risk-high {
+                        color: #e74c3c !important;
+                        font-weight: 700;
+                    }
+                    
+                    .risk-low {
+                        color: #4CAF50 !important;
+                        font-weight: 700;
+                    }
+                    
+                    .recommendation {
+                        background: #f8f9fa;
+                        padding: 20px;
+                        border-radius: 10px;
+                        margin-bottom: 25px;
+                    }
+                    
+                    .recommendation p {
+                        margin: 0;
+                        font-size: 1.1rem;
+                        font-weight: 500;
+                    }
+                    
+                    .new-analysis-btn {
+                        background: linear-gradient(135deg, #3498db, #2980b9);
+                        color: white;
+                        border: none;
+                        padding: 15px 25px;
+                        border-radius: 50px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .new-analysis-btn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(52,152,219,0.4);
+                    }
+                `;
+                document.head.appendChild(style);
+            });
+            console.log('🔧 APK Detector JavaScript loaded successfully');
+    </script>
+</body>
+</html>
