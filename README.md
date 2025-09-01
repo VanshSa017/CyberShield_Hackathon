@@ -29,21 +29,21 @@ It allows:
 ---
 
 ## 📂 Project Structure
-fraud-banking-apk-detection/
-│
-├── app.py # Flask backend
-├── model_syscalls.pkl # Trained ML model (system call classifier)
-│
-├── templates/ # HTML templates
-│ ├── manual_input.html # Input form for syscall frequencies
-│ └── result.html # Prediction result page
-│
-├── static/ # Static files (CSS & JS)
-│ ├── style.css # Styling for pages
-│ └── script.js # Animations & interactivity
-│
-├── requirements.txt # Python dependencies
-└── README.md # Project documentation
+fraud-banking-apk-detection/  
+│  
+├── app.py                # Flask backend  
+├── model_syscalls.pkl    # Trained ML model (system call classifier)  
+│  
+├── templates/            # HTML templates  
+│   ├── manual_input.html # Input form for syscall frequencies  
+│   └── result.html       # Prediction result page  
+│  
+├── static/               # Static files (CSS & JS)  
+│   ├── style.css         # Styling for pages  
+│   └── script.js         # Animations & interactivity  
+│  
+├── requirements.txt      # Python dependencies  
+└── README.md             # Project documentation  
 
 
 ---
