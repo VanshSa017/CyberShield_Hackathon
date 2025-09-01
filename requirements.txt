@@ -1,0 +1,18 @@
+Flask
+Werkzeug
+gunicorn=
+
+# Machine Learning
+scikit-learn
+xgboost
+lightgbm
+catboost
+optuna
+
+# Data Handling
+numpy
+pandas
+
+# Utilities
+joblib
+pickle-mixin
