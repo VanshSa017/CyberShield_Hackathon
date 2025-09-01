@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Call Frequencies Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.15);
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .form-container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            color: #374151;
+            font-weight: 600;
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.95rem;
+            letter-spacing: 0.025em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th:first-child {
+            border-top-left-radius: 12px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 12px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        tr:last-child td:first-child {
+            border-bottom-left-radius: 12px;
+        }
+
+        tr:last-child td:last-child {
+            border-bottom-right-radius: 12px;
+        }
+
+        .syscall-name {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 500;
+            color: #1f2937;
+            font-size: 0.9rem;
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            display: inline-block;
+            border: 1px solid #bae6fd;
+        }
+
+        .frequency-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #374151;
+        }
+
+        .frequency-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .frequency-input:hover {
+            border-color: #d1d5db;
+        }
+
+        .predict-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 32px rgba(102, 126, 234, 0.3);
+        }
+
+        .predict-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .predict-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .predict-btn:hover::before {
+            left: 100%;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-circle:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .floating-circle:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group::after {
+            content: 'calls';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        /* Scrollbar Styling */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 2rem;
+            }
+            
+            h2 {
+                font-size: 2rem;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-elements">
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h2>System Call Analyzer</h2>
+            <p class="subtitle">Enter frequency data for advanced system behavior prediction</p>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <span class="stat-number" id="totalCalls">0</span>
+                <span class="stat-label">Total Calls</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="activeCalls">0</span>
+                <span class="stat-label">Active Calls</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="avgFrequency">0.0</span>
+                <span class="stat-label">Avg Frequency</span>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form method="POST" id="syscallForm" action="{{ url_for('manual_input') }}">
+
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>System Call</th>
+                                <th>Frequency</th>
+                            </tr>
+                        </thead>
+                        <tbody id="syscallTable">
+                            <!-- Complete list of ARM system calls -->
+                            <tr>
+                                <td><span class="syscall-name">__arm_nr_cacheflush</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="__arm_nr_cacheflush" min="0" value="0" oninput="updateStats()">
+                                    </div> 
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">__arm_nr_set_tls</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="__arm_nr_set_tls" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">_llseek</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="_llseek" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">_newselect</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="_newselect" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">accept</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="accept" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">access</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="access" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">bind</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="bind" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">brk</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="brk" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">capset</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="capset" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">chdir</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="chdir" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">chmod</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="chmod" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">chown32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="chown32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">clock_getres</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="clock_getres" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">clock_gettime</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="clock_gettime" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">clone</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="clone" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">close</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="close" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">connect</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="connect" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">dup</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="dup" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">dup2</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="dup2" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">epoll_create</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="epoll_create" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">epoll_ctl</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="epoll_ctl" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">epoll_wait</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="epoll_wait" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">eventfd2</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="eventfd2" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">execve</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="execve" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">exit</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="exit" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">exit_group</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="exit_group" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">faccessat</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="faccessat" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fchmod</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fchmod" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fchown32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fchown32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fcntl</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fcntl" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fcntl64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fcntl64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fdatasync</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fdatasync" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">flock</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="flock" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fork</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fork" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fstat64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fstat64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fstatfs64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fstatfs64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">fsync</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="fsync" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">ftruncate</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="ftruncate" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">ftruncate64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="ftruncate64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">futex</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="futex" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getcwd</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getcwd" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getdents64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getdents64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getegid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getegid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">geteuid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="geteuid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getgid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getgid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getgroups32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getgroups32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getpeername</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getpeername" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getpgid</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getpgid" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getpid</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getpid" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getppid</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getppid" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getpriority</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getpriority" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getresgid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getresgid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getresuid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getresuid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getrusage</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getrusage" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getsockname</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getsockname" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getsockopt</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getsockopt" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">gettid</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="gettid" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">gettimeofday</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="gettimeofday" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">getuid32</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="getuid32" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">inotify_add_watch</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="inotify_add_watch" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">inotify_init</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="inotify_init" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">inotify_rm_watch</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="inotify_rm_watch" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">ioctl</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="ioctl" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">lgetxattr</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="lgetxattr" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">link</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="link" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">listen</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="listen" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">lseek</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="lseek" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="syscall-name">lstat64</span></td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="frequency-input" name="lstat64" min="0" value="0" oninput="updateStats()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+    <td><span class="syscall-name">madvise</span></td>
+    <td><input type="number" name="madvise" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mkdir</span></td>
+    <td><input type="number" name="mkdir" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mknod</span></td>
+    <td><input type="number" name="mknod" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mlock</span></td>
+    <td><input type="number" name="mlock" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mmap2</span></td>
+    <td><input type="number" name="mmap2" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mount</span></td>
+    <td><input type="number" name="mount" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mprotect</span></td>
+    <td><input type="number" name="mprotect" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">mremap</span></td>
+    <td><input type="number" name="mremap" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">msync</span></td>
+    <td><input type="number" name="msync" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">munlock</span></td>
+    <td><input type="number" name="munlock" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">munmap</span></td>
+    <td><input type="number" name="munmap" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">nanosleep</span></td>
+    <td><input type="number" name="nanosleep" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">open</span></td>
+    <td><input type="number" name="open" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">pipe</span></td>
+    <td><input type="number" name="pipe" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">pipe2</span></td>
+    <td><input type="number" name="pipe2" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">poll</span></td>
+    <td><input type="number" name="poll" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">prctl</span></td>
+    <td><input type="number" name="prctl" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">pread64</span></td>
+    <td><input type="number" name="pread64" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">ptrace</span></td>
+    <td><input type="number" name="ptrace" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">pwrite64</span></td>
+    <td><input type="number" name="pwrite64" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">read</span></td>
+    <td><input type="number" name="read" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">readlink</span></td>
+    <td><input type="number" name="readlink" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">recvfrom</span></td>
+    <td><input type="number" name="recvfrom" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">recvmsg</span></td>
+    <td><input type="number" name="recvmsg" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">rename</span></td>
+    <td><input type="number" name="rename" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">rmdir</span></td>
+    <td><input type="number" name="rmdir" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">rt_sigprocmask</span></td>
+    <td><input type="number" name="rt_sigprocmask" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">rt_sigtimedwait</span></td>
+    <td><input type="number" name="rt_sigtimedwait" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_get_priority_max</span></td>
+    <td><input type="number" name="sched_get_priority_max" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_get_priority_min</span></td>
+    <td><input type="number" name="sched_get_priority_min" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_getparam</span></td>
+    <td><input type="number" name="sched_getparam" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_getscheduler</span></td>
+    <td><input type="number" name="sched_getscheduler" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_setaffinity</span></td>
+    <td><input type="number" name="sched_setaffinity" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_setscheduler</span></td>
+    <td><input type="number" name="sched_setscheduler" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sched_yield</span></td>
+    <td><input type="number" name="sched_yield" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sendmsg</span></td>
+    <td><input type="number" name="sendmsg" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sendto</span></td>
+    <td><input type="number" name="sendto" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setgid32</span></td>
+    <td><input type="number" name="setgid32" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setgroups32</span></td>
+    <td><input type="number" name="setgroups32" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setitimer</span></td>
+    <td><input type="number" name="setitimer" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setpgid</span></td>
+    <td><input type="number" name="setpgid" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setpriority</span></td>
+    <td><input type="number" name="setpriority" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setresgid32</span></td>
+    <td><input type="number" name="setresgid32" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setresuid32</span></td>
+    <td><input type="number" name="setresuid32" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setrlimit</span></td>
+    <td><input type="number" name="setrlimit" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setsid</span></td>
+    <td><input type="number" name="setsid" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setsockopt</span></td>
+    <td><input type="number" name="setsockopt" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">setuid32</span></td>
+    <td><input type="number" name="setuid32" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">shutdown</span></td>
+    <td><input type="number" name="shutdown" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sigaction</span></td>
+    <td><input type="number" name="sigaction" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sigaltstack</span></td>
+    <td><input type="number" name="sigaltstack" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sigprocmask</span></td>
+    <td><input type="number" name="sigprocmask" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sigsuspend</span></td>
+    <td><input type="number" name="sigsuspend" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">socket</span></td>
+    <td><input type="number" name="socket" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">socketpair</span></td>
+    <td><input type="number" name="socketpair" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">stat64</span></td>
+    <td><input type="number" name="stat64" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">statfs64</span></td>
+    <td><input type="number" name="statfs64" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">symlink</span></td>
+    <td><input type="number" name="symlink" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">sysinfo</span></td>
+    <td><input type="number" name="sysinfo" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">timer_create</span></td>
+    <td><input type="number" name="timer_create" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">timer_settime</span></td>
+    <td><input type="number" name="timer_settime" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">truncate</span></td>
+    <td><input type="number" name="truncate" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">ugetrlimit</span></td>
+    <td><input type="number" name="ugetrlimit" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">umask</span></td>
+    <td><input type="number" name="umask" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">uname</span></td>
+    <td><input type="number" name="uname" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">unlink</span></td>
+    <td><input type="number" name="unlink" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">utimes</span></td>
+    <td><input type="number" name="utimes" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">vfork</span></td>
+    <td><input type="number" name="vfork" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">wait4</span></td>
+    <td><input type="number" name="wait4" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">write</span></td>
+    <td><input type="number" name="write" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+<tr>
+    <td><span class="syscall-name">writev</span></td>
+    <td><input type="number" name="writev" min="0" value="0"  class="frequency-input" oninput="updateStats()"></td>
+</tr>
+
+                    </table>
+                </div>
+                
+                <button type="submit" class="predict-btn" onclick="showLoading()">
+                    🔮 Analyze & Predict
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateStats() {
+            const inputs = document.querySelectorAll('.frequency-input');
+            let total = 0;
+            let active = 0;
+
+            inputs.forEach(input => {
+                const value = parseInt(input.value) || 0;
+                total += value;
+                if (value > 0) active++;
+            });
+
+            const avg = active > 0 ? (total / active).toFixed(1) : 0.0;
+
+            // Animate numbers
+            animateNumber('totalCalls', total);
+            animateNumber('activeCalls', active);
+            animateNumber('avgFrequency', avg);
+        }
+
+        function animateNumber(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseFloat(element.textContent) || 0;
+            const increment = (targetValue - currentValue) / 10;
+
+            let step = 0;
+            const animation = setInterval(() => {
+                step++;
+                const newValue = currentValue + (increment * step);
+                
+                if (step >= 10) {
+                    element.textContent = targetValue;
+                    clearInterval(animation);
+                } else {
+                    element.textContent = elementId === 'avgFrequency' ? 
+                        newValue.toFixed(1) : Math.round(newValue);
+                }
+            }, 30);
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            // Simulate processing time (remove this in actual implementation)
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 2000);
+        }
+
+        // Add some entrance animations
+        window.addEventListener('load', () => {
+            const container = document.querySelector('.container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.8s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+
+            // Animate table rows
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    row.style.transition = 'all 0.5s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateX(0)';
+                }, 200 + (index * 100));
+            });
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                document.getElementById('syscallForm').submit();
+            }
+        });
+
+        // Initialize stats
+        updateStats();
+    </script>
+</body>
+</html>
